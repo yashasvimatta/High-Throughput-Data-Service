@@ -1,0 +1,25 @@
+# Ignore environment variables
+.env
+
+# Ignore Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Ignore virtual environments
+.venv/
+venv/
+
+# Ignore logs and temporary files
+*.log
+tmp/
+.DS_Store
+
+# Ignore database dumps
+*.sqlite3
+*.db
+
+# Ignore Docker build artifacts
+/__pycache__/
+/.mypy_cache/
+/.pytest_cache/
