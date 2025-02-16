@@ -13,7 +13,6 @@ services:
       - database  # ensures that the mongodb dataabse starts before the flask app
     networks:
       - app-network
-  
 
   database:
     image: "mongo:latest"
@@ -22,19 +21,6 @@ services:
       - "27017:27017" 
     networks:
       - app-network
-  
-  data_processor:
-    build: .
-    volumes:
-      - ./archive:/app/archive  # Ensure it has access to the CSV file
-    depends_on:
-      - database
-    command: ["python", "-m", "src.ratings_processor"]
-    env_file:
-      - .env
-    restart: on-failure  # Restart if it fails due to MongoDB not being ready
-    networks:
-      - app-network  # Make sure it's on the same network as MongoDB
 
 networks:
   app-network:

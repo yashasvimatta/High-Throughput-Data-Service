@@ -1,6 +1,8 @@
 from flask import Flask, request, redirect, jsonify
 from database.db import db
-from models.model import User, Movie, Rating
+from models.rating import Rating
+from models.movie import Movie
+from models.user import User
 
 print("Starting Flask app")
 app = Flask(__name__)
@@ -57,5 +59,6 @@ def get_movie_ratings_for_movieId(movie_id):
     return jsonify(response_lis)
 
 if __name__ == "__main__":
+    
     app.run(debug=True, host="0.0.0.0", port=5000)
     
