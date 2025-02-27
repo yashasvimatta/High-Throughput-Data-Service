@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   flask_app:
     build: .
@@ -10,7 +8,7 @@ services:
     env_file:
       - .env
     depends_on:
-      - database  # ensures that the mongodb dataabse starts before the flask app
+      - database  # ensures that the mongodb database starts before the flask app
     networks:
       - app-network
 
