@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flask-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: flask-app
+  template:
+    metadata:
+      labels:
+        app: flask-app
+    spec:
+      containers:
+        - name: flask-app
+          image: high-throughput-data-service-flask_app:latest  
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 5000     
+          env:      #defining environment variables for the container.
+            # - name: MONGO_USER
+            #   valueFrom:
+            #     secretKeyRef: 
+            #       name: mongo-secret
+            #       key: MONGO_USER
+            # - name: MONGO_PASSWORD
+            #   valueFrom:
+            #     secretKeyRef: 
+            #       name: mongo-secret
+            #       key: MONGO_PASSWORD
+            # - name: MONGO_HOST
+            #   valueFrom:
+            #     configMapKeyRef: 
+            #       name: mongo-config
+            #       key: MONGO_HOST
+            - name: MONGO_DB_NAME
+              valueFrom:
+                configMapKeyRef: 
+                  name: mongo-config
+                  key: MONGO_DB_NAME
+            - name: MONGO_URI
+              valueFrom:
+                configMapKeyRef: 
+                  name: mongo-config
+                  key: MONGO_URI
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flask-service
+spec:
+  selector:
+    app: flask-app
+  ports:
+    - protocol: TCP
+      port: 5000            # sets port of the service  # can be any port but common practice to select the same port #
+      targetPort: 5000      # should be same as the containerport. This is where the service should forward the request to
+      nodePort: 30100       # this is the port that will open on kubernetes nodes on which the application will be accessible
+  type: NodePort            # external service type 

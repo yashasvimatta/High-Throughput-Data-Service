@@ -1,11 +1,8 @@
 from flask import Flask, request, redirect, jsonify
-from constant.FieldNames import USER_ID_FIELD_NAME, USER_NAME_FIELD_NAME
 from database.db import db
-from exception import ValidationException
 from models.rating import Rating
 from models.movie import Movie
 from models import User
-from validator import CreateUserRequestValidator
 
 print("Starting Flask app")
 app = Flask(__name__)
@@ -17,62 +14,33 @@ def home():
     return "Flask app is running!"
 
 # Add user route
-@app.route("/users", methods=["POST"])
+@app.route("/add_user", methods=["POST"])
 def add_user():
-    """
-    Behavior:
-     1. Adds a new user
-     2. Throws error if the user_id exists
-     3. Throws error if required attributes are not found
-
-    Required attributes:
-     1. user_id
-     2. user_name
-    """
     try:
-        # Validate request
-        CreateUserRequestValidator.validate(request)
-
-        # Get payload
-        payload = request.get_json()  
-        if User.get_by_id(payload[USER_ID_FIELD_NAME]):
-            return jsonify({
-                'Status': 'Failed',
-                'ErrorType': 'RecordExistsException',
-                'Message': 'User already exists'
-                }), 409
-
-        # Create user
-        new_user = User(user_id= payload[USER_ID_FIELD_NAME],
-                        user_name = payload[USER_NAME_FIELD_NAME])
+        user = request.get_json()
+        required_data = ["user_id"]
+        for i in required_data:
+            if i not in user:
+                return jsonify({"error": "Missing user id"}), 400
+            
+        if User.objects(user_id=user["user_id"]).first():
+            return jsonify({"message": "User already exists"}), 200          # user already exists
+        
+        new_user = User(user_id= user["user_id"])
         new_user.save()
-        return jsonify({
-            'Status': 'Success',
-            'Message': 'New User created'
-            }), 201
-    
-    except ValidationException as ve:
-        return ve.get_response()
+        return jsonify({"success": "New User created"}), 201
     except Exception as e:
         return jsonify({"error":str(e)}), 500
 
 
 # Get user route
-@app.route("/users/<int:user_id>", methods=["GET"])
+@app.route("/get_user/<int:user_id>", methods=["GET"])
 def get_user(user_id):
     try:
-        # Get user from db
-        user = User.get_by_id(user_id)
-        
-        # Check if user exists
+        user = User.objects(user_id=user_id).first()
         if not user:
-            return jsonify({
-                'Status': 'Failed',
-                'ErrorType': 'RecordNotFoundException',
-                'Message': 'User not found'
-                }), 404
-        
-        return jsonify(user), 200
+            return jsonify({"error": "User not found"}), 404
+        return jsonify({"user_id":user.user_id}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
