@@ -1,5 +1,5 @@
-from src.constant.FieldNames import USER_ID_FIELD_NAME, USER_NAME_FIELD_NAME
-from src.exception import ValidationException
+from constant.FieldNames import USER_ID_FIELD_NAME, USER_NAME_FIELD_NAME
+from exception.validation_exception import ValidationException
 
 
 class CreateUserRequestValidator:
