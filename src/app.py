@@ -1,8 +1,12 @@
-from flask import Flask, request, redirect, jsonify
+from flask import Flask, request, jsonify
+from constant.FieldNames import USER_ID_FIELD_NAME, USER_NAME_FIELD_NAME
 from database.db import db
+from exception.validation_exception import ValidationException
 from models.rating import Rating
 from models.movie import Movie
 from models.user import User
+from response.api_responses import APIResponse
+from validator.create_user_request_validator import CreateUserRequestValidator
 
 print("Starting Flask app")
 app = Flask(__name__)
@@ -11,38 +15,57 @@ db()
 
 @app.route("/", methods=["GET"])
 def home():
-    return "Flask app is running!"
+    return APIResponse.ok_success('Application is live and healthy')
 
 # Add user route
-@app.route("/add_user", methods=["POST"])
+@app.route("/users", methods=["POST"])
 def add_user():
+    """
+    Behavior:
+     1. Adds a new user
+     2. Throws error if the user_id exists
+     3. Throws error if required attributes are not found
+
+    Required attributes:
+     1. user_id
+     2. user_name
+    """
     try:
-        user = request.get_json()
-        required_data = ["user_id"]
-        for i in required_data:
-            if i not in user:
-                return jsonify({"error": "Missing user id"}), 400
-            
-        if User.objects(user_id=user["user_id"]).first():
-            return jsonify({"message": "User already exists"}), 200          # user already exists
-        
-        new_user = User(user_id= user["user_id"])
+        # Validate request
+        CreateUserRequestValidator.validate(request)
+
+        # Get payload
+        payload = request.get_json()  
+        if User.get_by_id(payload[USER_ID_FIELD_NAME]):
+            return APIResponse.conflict('User already exists', 'RecordExistsException')
+
+        # Create user
+        new_user = User(user_id= payload[USER_ID_FIELD_NAME],
+                        user_name = payload[USER_NAME_FIELD_NAME])
         new_user.save()
-        return jsonify({"success": "New User created"}), 201
+        return APIResponse.created('New User created')
+    
+    except ValidationException as ve:
+        return ve.get_api_response()
     except Exception as e:
-        return jsonify({"error":str(e)}), 500
+        return APIResponse.internal_server_error(str(e))
 
 
 # Get user route
-@app.route("/get_user/<int:user_id>", methods=["GET"])
+@app.route("/users/<int:user_id>", methods=["GET"])
 def get_user(user_id):
     try:
-        user = User.objects(user_id=user_id).first()
+        # Get user from db
+        user = User.get_by_id(user_id)
+        
+        # Check if user exists
         if not user:
-            return jsonify({"error": "User not found"}), 404
-        return jsonify({"user_id":user.user_id}), 200
+            return APIResponse.not_found('User not found')
+
+        # Return user
+        return APIResponse.ok_success(user)
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return APIResponse.internal_server_error(str(e))
     
 # Add movie route
 @app.route("/add_movie", methods=["POST"])
